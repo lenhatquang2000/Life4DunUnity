@@ -17,8 +17,25 @@ namespace AILife.UI
 
         private string newPlayerName = "";
         private bool playersLoaded = false;
-        private string[] availableModels = new string[] { "Mira" };
+
+        // Load tự động từ Resources/CharacterRegistry.asset
+        private CharacterRegistry characterRegistry;
+
         private int selectedModelIndex = 0;
+
+        private string[] GetAvailableModels()
+        {
+            if (characterRegistry != null && characterRegistry.characters.Count > 0)
+                return characterRegistry.GetDisplayNames();
+            return new string[] { "Mira" };
+        }
+
+        private string GetSelectedModelName()
+        {
+            if (characterRegistry != null && characterRegistry.characters.Count > 0)
+                return characterRegistry.GetModelName(selectedModelIndex);
+            return "Mira";
+        }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void AutoSpawn()
@@ -34,6 +51,13 @@ namespace AILife.UI
 
         private void Awake()
         {
+            // Tự động load CharacterRegistry từ Resources/
+            characterRegistry = Resources.Load<CharacterRegistry>("CharacterRegistry");
+            if (characterRegistry == null)
+                Debug.LogWarning("[AuthUI_IMGUI] Khong tim thay Resources/CharacterRegistry.asset. Fallback: chi hien Mira.");
+            else
+                Debug.Log($"[AuthUI_IMGUI] Loaded CharacterRegistry: {characterRegistry.characters.Count} characters.");
+
             // Auto-create AuthManager if not exists
             if (AuthManager.Instance == null)
             {
@@ -270,8 +294,11 @@ namespace AILife.UI
 
                 GUILayout.Space(15);
                 GUILayout.Label("<b>Chọn Model nhân vật:</b>");
-                selectedModelIndex = GUILayout.Toolbar(selectedModelIndex, availableModels, GUILayout.Height(25));
-                
+                string[] models = GetAvailableModels();
+                // Clamp index phòng registry thay doi so luong
+                selectedModelIndex = Mathf.Clamp(selectedModelIndex, 0, models.Length - 1);
+                selectedModelIndex = GUILayout.Toolbar(selectedModelIndex, models, GUILayout.Height(25));
+
                 GUILayout.Space(5);
                 GUILayout.Label("<b>Tên nhân vật mới:</b>");
                 newPlayerName = GUILayout.TextField(newPlayerName, GUILayout.Height(25));
@@ -283,7 +310,20 @@ namespace AILife.UI
                     }
                     else
                     {
-                        string modelName = availableModels[selectedModelIndex];
+                        string[] availModels = GetAvailableModels();
+                        string modelName = GetSelectedModelName();
+                        
+                        Debug.Log($"[AuthUI_IMGUI] Bấm Tạo Nhân Vật - Tên: {newPlayerName}, selectedModelIndex: {selectedModelIndex}, characterRegistry is null: {characterRegistry == null}");
+                        if (characterRegistry != null)
+                        {
+                            Debug.Log($"[AuthUI_IMGUI] Registry has {characterRegistry.characters.Count} characters:");
+                            for (int i = 0; i < characterRegistry.characters.Count; i++)
+                            {
+                                Debug.Log($"  - [{i}] modelName: {characterRegistry.characters[i].modelName}, displayName: {characterRegistry.characters[i].displayName}");
+                            }
+                        }
+                        Debug.Log($"[AuthUI_IMGUI] models array: {string.Join(", ", availModels)} -> Selected modelName: {modelName}");
+                        
                         statusMessage = $"Đang tạo nhân vật {newPlayerName} với model {modelName}...";
                         PlayerManager.Instance.CreatePlayer(newPlayerName, modelName);
                     }
@@ -354,12 +394,16 @@ namespace AILife.UI
             {
                 statusMessage = $"Đã kích hoạt nhân vật: {player.username}";
                 
+                // Gửi modelName để Server/Host spawn đúng prefab
+                string modelName = string.IsNullOrEmpty(player.model) ? "Mira" : player.model;
+                CharacterSpawnManager.SetClientModelName(modelName);
+                
                 // Tự động kết nối Client nếu không có quyền Hosting
                 if (!AuthManager.Instance.UserPermissions.Contains("Hosting"))
                 {
                     if (Unity.Netcode.NetworkManager.Singleton != null)
                     {
-                        statusMessage = "Đang kết nối vào máy chủ (Client)...";
+                        statusMessage = $"Đang kết nối vào máy chủ (Client) với model {modelName}...";
                         Unity.Netcode.NetworkManager.Singleton.StartClient();
                     }
                 }

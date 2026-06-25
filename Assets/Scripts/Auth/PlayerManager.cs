@@ -15,7 +15,7 @@ namespace AILife.Auth
         public static PlayerManager Instance { get; private set; }
         
         [Header("API Configuration")]
-        [SerializeField] private string apiBaseUrl = "https://life4dunbackend.onrender.com/api";
+        [SerializeField] private string apiBaseUrl = "http://localhost:5205/api";
         
         [Header("Current Player")]
         [SerializeField] private PlayerData currentPlayer;
@@ -183,8 +183,11 @@ namespace AILife.Auth
             string json = JsonUtility.ToJson(requestData);
             byte[] bodyRaw = Encoding.UTF8.GetBytes(json);
             
+            string targetUrl = $"{apiBaseUrl}/Players";
+            Debug.Log($"[PlayerManager] Sending POST Request to URL: {targetUrl}\nPayload JSON: {json}");
+            
             using (UnityWebRequest request = new UnityWebRequest(
-                $"{apiBaseUrl}/Players", "POST"))
+                targetUrl, "POST"))
             {
                 request.uploadHandler = new UploadHandlerRaw(bodyRaw);
                 request.downloadHandler = new DownloadHandlerBuffer();
@@ -196,6 +199,7 @@ namespace AILife.Auth
                 if (request.result == UnityWebRequest.Result.Success)
                 {
                     string responseJson = request.downloadHandler.text;
+                    Debug.Log($"[PlayerManager] CreatePlayer Success! Response Code: {request.responseCode}\nResponse JSON: {responseJson}");
                     PlayerData newPlayer = JsonUtility.FromJson<PlayerData>(responseJson);
                     
                     // Thêm vào danh sách
@@ -208,6 +212,7 @@ namespace AILife.Auth
                 }
                 else
                 {
+                    Debug.LogError($"[PlayerManager] CreatePlayer Failed! Response Code: {request.responseCode}\nError/Response content: {request.downloadHandler.text}");
                     string errorMessage = "Không thể tạo nhân vật";
                     
                     // Parse validation error

@@ -14,7 +14,7 @@ namespace AILife.Auth
         public static AuthManager Instance { get; private set; }
         
         [Header("API Configuration")]
-        [SerializeField] private string apiBaseUrl = "https://life4dunbackend.onrender.com/api";
+        [SerializeField] private string apiBaseUrl = "http://localhost:5205/api";
         
         [Header("Session")]
         [SerializeField] private string currentAccessToken;

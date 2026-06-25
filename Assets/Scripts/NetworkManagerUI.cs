@@ -41,6 +41,12 @@ public class NetworkManagerUI : MonoBehaviour
         // Nút bấm chạy Host (Vừa làm Server vừa làm Player 1)
         if (GUILayout.Button("Start Host (Server + Player 1)", GUILayout.Height(40)))
         {
+            if (AILife.Auth.PlayerManager.Instance != null && AILife.Auth.PlayerManager.Instance.CurrentPlayer != null)
+            {
+                string modelName = AILife.Auth.PlayerManager.Instance.CurrentPlayer.model;
+                Debug.Log($"[NetworkManagerUI] Host is setting modelName: {modelName}");
+                CharacterSpawnManager.SetClientModelName(modelName);
+            }
             NetworkManager.Singleton.StartHost();
             Debug.Log("[NetworkManagerUI] Host started.");
         }
@@ -50,6 +56,12 @@ public class NetworkManagerUI : MonoBehaviour
         // Nút bấm chạy Client (Kết nối vào IP localhost 127.0.0.1 mặc định)
         if (GUILayout.Button("Start Client (Player 2)", GUILayout.Height(40)))
         {
+            if (AILife.Auth.PlayerManager.Instance != null && AILife.Auth.PlayerManager.Instance.CurrentPlayer != null)
+            {
+                string modelName = AILife.Auth.PlayerManager.Instance.CurrentPlayer.model;
+                Debug.Log($"[NetworkManagerUI] Client is setting modelName: {modelName}");
+                CharacterSpawnManager.SetClientModelName(modelName);
+            }
             NetworkManager.Singleton.StartClient();
             Debug.Log("[NetworkManagerUI] Client started.");
         }
