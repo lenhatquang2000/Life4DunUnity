@@ -342,8 +342,32 @@ public class MiraController : NetworkBehaviour
 
     private void ApplyAttributes(AILife.Auth.PlayerData player)
     {
+        Debug.Log("========================================");
+        Debug.Log("[MiraController] ===== PLAYER SELECTED =====");
+        Debug.Log("========================================");
+        Debug.Log($"[MiraController] Player ID: {player.id}");
+        Debug.Log($"[MiraController] Username: {player.username}");
+        Debug.Log($"[MiraController] User ID: {player.userId}");
+        Debug.Log($"[MiraController] Experience: {player.experience}");
+        Debug.Log($"[MiraController] Gold: {player.gold}");
+        Debug.Log($"[MiraController] Gems: {player.gems}");
+        Debug.Log($"[MiraController] Avatar URL: {player.avatarUrl}");
+        Debug.Log($"[MiraController] Model Name: {player.model}");
+        Debug.Log($"[MiraController] Created At: {player.createdAt}");
+        Debug.Log($"[MiraController] Last Login At: {player.lastLoginAt}");
+        
         if (player.attributes != null)
         {
+            Debug.Log("========================================");
+            Debug.Log("[MiraController] ===== PLAYER ATTRIBUTES =====");
+            Debug.Log("========================================");
+            Debug.Log($"[MiraController] Level: {player.attributes.level}");
+            Debug.Log($"[MiraController] Attack: {player.attributes.attack}");
+            Debug.Log($"[MiraController] Defense: {player.attributes.defense}");
+            Debug.Log($"[MiraController] Speed: {player.attributes.speed}");
+            Debug.Log($"[MiraController] Health: {player.attributes.health}");
+            Debug.Log($"[MiraController] Max Health: {player.attributes.maxHealth}");
+            
             this.level = player.attributes.level;
             this.attack = player.attributes.attack;
             this.defense = player.attributes.defense;
@@ -354,32 +378,63 @@ public class MiraController : NetworkBehaviour
             this.moveSpeed = player.attributes.speed * 0.1f;
             if (this.moveSpeed <= 0f) this.moveSpeed = 3f;
 
-            Debug.Log($"[MiraController] Applied character attributes: Speed={this.moveSpeed}, Level={this.level}, Attack={this.attack}, Defense={this.defense}, HP={this.health}/{this.maxHealth}");
+            Debug.Log($"[MiraController] ✓ Applied character attributes: Speed={this.moveSpeed}, Level={this.level}, Attack={this.attack}, Defense={this.defense}, HP={this.health}/{this.maxHealth}");
+        }
+        else
+        {
+            Debug.LogWarning("[MiraController] Player attributes is NULL!");
         }
 
         // Load đúng model (kích hoạt Child GameObject tương ứng với tên model)
         string modelName = string.IsNullOrEmpty(player.model) ? "Mira" : player.model;
+        Debug.Log("========================================");
+        Debug.Log("[MiraController] ===== MODEL LOADING =====");
+        Debug.Log("========================================");
+        Debug.Log($"[MiraController] Target Model Name: '{modelName}'");
+        
         Transform modelTransform = transform.Find(modelName);
         if (modelTransform != null)
         {
+            Debug.Log($"[MiraController] ✓ Found model '{modelName}' in children");
+            
             // Deactivate all child models first
             foreach (Transform child in transform)
             {
                 if (child.name == "Mira" || child.name == "Archer" || child.name == "Warrior") // example names
                 {
+                    Debug.Log($"[MiraController]   - Deactivating child: {child.name}");
                     child.gameObject.SetActive(false);
                 }
             }
             // Activate the selected model
             modelTransform.gameObject.SetActive(true);
+            Debug.Log($"[MiraController] ✓ Activated model: {modelName}");
             
             // Re-assign components from the active model child if necessary
             var childAnimator = modelTransform.GetComponent<Animator>();
-            if (childAnimator != null) animator = childAnimator;
+            if (childAnimator != null) 
+            {
+                animator = childAnimator;
+                Debug.Log($"[MiraController] ✓ Re-assigned Animator from model");
+            }
             
             var childSpriteRenderer = modelTransform.GetComponent<SpriteRenderer>();
-            if (childSpriteRenderer != null) spriteRenderer = childSpriteRenderer;
+            if (childSpriteRenderer != null) 
+            {
+                spriteRenderer = childSpriteRenderer;
+                Debug.Log($"[MiraController] ✓ Re-assigned SpriteRenderer from model");
+            }
         }
+        else
+        {
+            Debug.LogError($"[MiraController] ✗ Model '{modelName}' NOT FOUND in children!");
+            Debug.Log($"[MiraController] Available children:");
+            foreach (Transform child in transform)
+            {
+                Debug.Log($"[MiraController]   - {child.name}");
+            }
+        }
+        Debug.Log("========================================");
     }
 
     private void OnGUI()

@@ -36,7 +36,14 @@ public class CharacterSpawnManager : MonoBehaviour
         if (_registry == null)
             Debug.LogWarning("[CharacterSpawnManager] Khong tim thay Resources/CharacterRegistry.asset!");
         else
+        {
             Debug.Log($"[CharacterSpawnManager] Loaded registry: {_registry.characters.Count} characters.");
+            Debug.Log("[CharacterSpawnManager] Available characters in registry:");
+            foreach (var charEntry in _registry.characters)
+            {
+                Debug.Log($"[CharacterSpawnManager]   - modelName: '{charEntry.modelName}', displayName: '{charEntry.displayName}', prefab: {(charEntry.prefab != null ? charEntry.prefab.name : "NULL")}");
+            }
+        }
     }
 
     private void OnEnable()
@@ -107,18 +114,40 @@ public class CharacterSpawnManager : MonoBehaviour
             _pendingModelNames.Remove(clientId);
         }
 
-        Debug.Log($"[CharacterSpawnManager] Server: Spawning '{modelName}' cho client {clientId}");
+        Debug.Log("========================================");
+        Debug.Log("[CharacterSpawnManager] ===== CLIENT CONNECTED =====");
+        Debug.Log("========================================");
+        Debug.Log($"[CharacterSpawnManager] Client ID: {clientId}");
+        Debug.Log($"[CharacterSpawnManager] Requested Model Name: '{modelName}'");
+        Debug.Log($"[CharacterSpawnManager] Registry is null: {_registry == null}");
 
         // Tìm prefab trong registry
         GameObject prefabToSpawn = null;
         if (_registry != null)
+        {
             prefabToSpawn = _registry.GetPrefab(modelName);
+            Debug.Log($"[CharacterSpawnManager] GetPrefab('{modelName}') returned: {(prefabToSpawn != null ? prefabToSpawn.name : "NULL")}");
+            
+            if (prefabToSpawn == null)
+            {
+                Debug.LogWarning($"[CharacterSpawnManager] Model '{modelName}' NOT FOUND in registry!");
+                Debug.Log("[CharacterSpawnManager] Available modelNames in registry:");
+                foreach (var charEntry in _registry.characters)
+                {
+                    Debug.Log($"[CharacterSpawnManager]   - '{charEntry.modelName}'");
+                }
+            }
+        }
+        else
+        {
+            Debug.LogWarning("[CharacterSpawnManager] Registry is NULL, cannot lookup prefab!");
+        }
 
         // Fallback: dùng Default Player Prefab (Mira)
         if (prefabToSpawn == null)
         {
             prefabToSpawn = NetworkManager.Singleton.NetworkConfig.PlayerPrefab;
-            Debug.LogWarning($"[CharacterSpawnManager] Khong tim thay prefab '{modelName}', fallback Mira.");
+            Debug.LogWarning($"[CharacterSpawnManager] Fallback to Default Player Prefab: {(prefabToSpawn != null ? prefabToSpawn.name : "NULL")}");
         }
 
         if (prefabToSpawn == null)
@@ -126,6 +155,8 @@ public class CharacterSpawnManager : MonoBehaviour
             Debug.LogError("[CharacterSpawnManager] Khong co prefab nao de spawn!");
             return;
         }
+
+        Debug.Log($"[CharacterSpawnManager] Final prefab to spawn: {prefabToSpawn.name}");
 
         // Random vị trí quanh spawn point
         Vector2 offset = Random.insideUnitCircle * spawnRadius;
@@ -137,12 +168,13 @@ public class CharacterSpawnManager : MonoBehaviour
         if (netObj != null)
         {
             netObj.SpawnAsPlayerObject(clientId, true);
-            Debug.Log($"[CharacterSpawnManager] Da spawn '{modelName}' cho client {clientId} tai {spawnPos}");
+            Debug.Log($"[CharacterSpawnManager] ✓ Spawned '{prefabToSpawn.name}' for client {clientId} at {spawnPos}");
         }
         else
         {
-            Debug.LogError($"[CharacterSpawnManager] Prefab '{modelName}' khong co NetworkObject component!");
+            Debug.LogError($"[CharacterSpawnManager] Prefab '{prefabToSpawn.name}' has no NetworkObject component!");
             Destroy(playerObj);
         }
+        Debug.Log("========================================");
     }
 }

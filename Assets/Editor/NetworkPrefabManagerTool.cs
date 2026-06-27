@@ -352,10 +352,11 @@ public class NetworkPrefabManagerTool : EditorWindow
         if (removeIndex >= 0)
         {
             var removed = _prefabsList.PrefabList[removeIndex];
+            string prefabName = removed.Prefab != null ? removed.Prefab.name : "null";
             _prefabsList.Remove(removed);
             EditorUtility.SetDirty(_prefabsList);
             AssetDatabase.SaveAssets();
-            Log($"[OK] Da xoa prefab [{removeIndex}]: {removed.Prefab?.name ?? "null"}");
+            Log($"[OK] Da xoa prefab [{removeIndex}]: {prefabName}");
         }
     }
 

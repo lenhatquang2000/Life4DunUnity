@@ -1,5 +1,6 @@
 using UnityEngine;
 using Unity.Netcode;
+using AILife.Auth;
 
 public class NetworkManagerUI : MonoBehaviour
 {
@@ -46,6 +47,9 @@ public class NetworkManagerUI : MonoBehaviour
                 string modelName = AILife.Auth.PlayerManager.Instance.CurrentPlayer.model;
                 Debug.Log($"[NetworkManagerUI] Host is setting modelName: {modelName}");
                 CharacterSpawnManager.SetClientModelName(modelName);
+                
+                // Thay đổi Default Player Prefab dựa trên modelName cho Host
+                ChangeDefaultPlayerPrefab(modelName);
             }
             NetworkManager.Singleton.StartHost();
             Debug.Log("[NetworkManagerUI] Host started.");
@@ -101,5 +105,40 @@ public class NetworkManagerUI : MonoBehaviour
             NetworkManager.Singleton.Shutdown();
             Debug.Log("[NetworkManagerUI] Network shutdown.");
         }
+    }
+
+    private void ChangeDefaultPlayerPrefab(string modelName)
+    {
+        Debug.Log($"[NetworkManagerUI] ChangeDefaultPlayerPrefab called with modelName: '{modelName}'");
+        
+        // Load CharacterRegistry từ Resources
+        CharacterRegistry registry = Resources.Load<CharacterRegistry>("CharacterRegistry");
+        Debug.Log($"[NetworkManagerUI] Registry loaded: {registry != null}");
+        if (registry == null)
+        {
+            Debug.LogWarning("[NetworkManagerUI] CharacterRegistry not found, cannot change default prefab.");
+            return;
+        }
+        
+        Debug.Log($"[NetworkManagerUI] Registry has {registry.characters.Count} characters");
+
+        // Tìm prefab theo modelName
+        GameObject prefab = registry.GetPrefab(modelName);
+        Debug.Log($"[NetworkManagerUI] GetPrefab('{modelName}') returned: {(prefab != null ? prefab.name : "NULL")}");
+        
+        if (prefab == null)
+        {
+            Debug.LogWarning($"[NetworkManagerUI] Prefab '{modelName}' not found in CharacterRegistry.");
+            Debug.Log("[NetworkManagerUI] Available modelNames in registry:");
+            foreach (var charEntry in registry.characters)
+            {
+                Debug.Log($"[NetworkManagerUI]   - '{charEntry.modelName}'");
+            }
+            return;
+        }
+
+        // Set làm Default Player Prefab
+        NetworkManager.Singleton.NetworkConfig.PlayerPrefab = prefab;
+        Debug.Log($"[NetworkManagerUI] ✓ Changed Default Player Prefab to: {prefab.name}");
     }
 }

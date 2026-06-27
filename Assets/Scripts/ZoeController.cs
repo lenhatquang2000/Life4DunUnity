@@ -212,22 +212,31 @@ public class ZoeController : NetworkBehaviour
                 {
                     TryChopTree();
                 }
+                
+                // Phát hiện nhấn chuột trái để basic attack
+                if (Mouse.current.leftButton.wasPressedThisFrame)
+                {
+                    BasicAttack();
+                }
             }
 
             Vector2 moveInput = new Vector2(moveX, moveY);
             bool isMoving = moveInput.magnitude > 0.1f;
 
-            if (isMoving)
+            if (currentAction != "Basic_Attack")
             {
-                moveInput.Normalize();
-                currentAction = "Walking";
-                currentDirection = GetDirectionString(moveInput);
-                
-                transform.Translate(moveInput * moveSpeed * Time.deltaTime);
-            }
-            else
-            {
-                currentAction = "Breathing_Idle";
+                if (isMoving)
+                {
+                    moveInput.Normalize();
+                    currentAction = "Walking";
+                    currentDirection = GetDirectionString(moveInput);
+                    
+                    transform.Translate(moveInput * moveSpeed * Time.deltaTime);
+                }
+                else
+                {
+                    currentAction = "Breathing_Idle";
+                }
             }
             
             CheckChunkChange();
@@ -301,6 +310,7 @@ public class ZoeController : NetworkBehaviour
         
         if (animName != lastAnimation)
         {
+            Debug.Log($"[ZoeController] Playing animation: {animName}");
             animator.Play(animName);
             lastAnimation = animName;
         }
@@ -342,8 +352,32 @@ public class ZoeController : NetworkBehaviour
 
     private void ApplyAttributes(AILife.Auth.PlayerData player)
     {
+        Debug.Log("========================================");
+        Debug.Log("[ZoeController] ===== PLAYER SELECTED =====");
+        Debug.Log("========================================");
+        Debug.Log($"[ZoeController] Player ID: {player.id}");
+        Debug.Log($"[ZoeController] Username: {player.username}");
+        Debug.Log($"[ZoeController] User ID: {player.userId}");
+        Debug.Log($"[ZoeController] Experience: {player.experience}");
+        Debug.Log($"[ZoeController] Gold: {player.gold}");
+        Debug.Log($"[ZoeController] Gems: {player.gems}");
+        Debug.Log($"[ZoeController] Avatar URL: {player.avatarUrl}");
+        Debug.Log($"[ZoeController] Model Name: {player.model}");
+        Debug.Log($"[ZoeController] Created At: {player.createdAt}");
+        Debug.Log($"[ZoeController] Last Login At: {player.lastLoginAt}");
+        
         if (player.attributes != null)
         {
+            Debug.Log("========================================");
+            Debug.Log("[ZoeController] ===== PLAYER ATTRIBUTES =====");
+            Debug.Log("========================================");
+            Debug.Log($"[ZoeController] Level: {player.attributes.level}");
+            Debug.Log($"[ZoeController] Attack: {player.attributes.attack}");
+            Debug.Log($"[ZoeController] Defense: {player.attributes.defense}");
+            Debug.Log($"[ZoeController] Speed: {player.attributes.speed}");
+            Debug.Log($"[ZoeController] Health: {player.attributes.health}");
+            Debug.Log($"[ZoeController] Max Health: {player.attributes.maxHealth}");
+            
             this.level = player.attributes.level;
             this.attack = player.attributes.attack;
             this.defense = player.attributes.defense;
@@ -354,32 +388,63 @@ public class ZoeController : NetworkBehaviour
             this.moveSpeed = player.attributes.speed * 0.1f;
             if (this.moveSpeed <= 0f) this.moveSpeed = 3f;
 
-            Debug.Log($"[ZoeController] Applied character attributes: Speed={this.moveSpeed}, Level={this.level}, Attack={this.attack}, Defense={this.defense}, HP={this.health}/{this.maxHealth}");
+            Debug.Log($"[ZoeController] ✓ Applied character attributes: Speed={this.moveSpeed}, Level={this.level}, Attack={this.attack}, Defense={this.defense}, HP={this.health}/{this.maxHealth}");
+        }
+        else
+        {
+            Debug.LogWarning("[ZoeController] Player attributes is NULL!");
         }
 
         // Load đúng model (kích hoạt Child GameObject tương ứng với tên model)
         string modelName = string.IsNullOrEmpty(player.model) ? "ZoeKo" : player.model;
+        Debug.Log("========================================");
+        Debug.Log("[ZoeController] ===== MODEL LOADING =====");
+        Debug.Log("========================================");
+        Debug.Log($"[ZoeController] Target Model Name: '{modelName}'");
+        
         Transform modelTransform = transform.Find(modelName);
         if (modelTransform != null)
         {
+            Debug.Log($"[ZoeController] ✓ Found model '{modelName}' in children");
+            
             // Deactivate all child models first
             foreach (Transform child in transform)
             {
                 if (child.name == "Mira" || child.name == "ZoeKo" || child.name == "Archer" || child.name == "Warrior")
                 {
+                    Debug.Log($"[ZoeController]   - Deactivating child: {child.name}");
                     child.gameObject.SetActive(false);
                 }
             }
             // Activate the selected model
             modelTransform.gameObject.SetActive(true);
+            Debug.Log($"[ZoeController] ✓ Activated model: {modelName}");
             
             // Re-assign components from the active model child if necessary
             var childAnimator = modelTransform.GetComponent<Animator>();
-            if (childAnimator != null) animator = childAnimator;
+            if (childAnimator != null) 
+            {
+                animator = childAnimator;
+                Debug.Log($"[ZoeController] ✓ Re-assigned Animator from model");
+            }
             
             var childSpriteRenderer = modelTransform.GetComponent<SpriteRenderer>();
-            if (childSpriteRenderer != null) spriteRenderer = childSpriteRenderer;
+            if (childSpriteRenderer != null) 
+            {
+                spriteRenderer = childSpriteRenderer;
+                Debug.Log($"[ZoeController] ✓ Re-assigned SpriteRenderer from model");
+            }
         }
+        else
+        {
+            Debug.LogError($"[ZoeController] ✗ Model '{modelName}' NOT FOUND in children!");
+            Debug.Log($"[ZoeController] Available children:");
+            foreach (Transform child in transform)
+            {
+                Debug.Log($"[ZoeController]   - {child.name}");
+            }
+        }
+        Debug.Log("========================================");
     }
 
     private void OnGUI()
@@ -408,6 +473,52 @@ public class ZoeController : NetworkBehaviour
         
         GUILayout.EndVertical();
         GUILayout.EndArea();
+    }
+
+    private void BasicAttack()
+    {
+        Debug.Log("[ZoeController] Basic Attack triggered!");
+        
+        // Lấy vị trí chuột trong world space
+        Vector3 mousePosition = Mouse.current.position.ReadValue();
+        mousePosition.z = Camera.main.nearClipPlane;
+        Vector3 worldMousePosition = Camera.main.ScreenToWorldPoint(mousePosition);
+        
+        // Tính hướng từ player đến chuột
+        Vector3 attackDirection = (worldMousePosition - transform.position).normalized;
+        
+        // Cập nhật hướng của player
+        currentDirection = GetDirectionString(new Vector2(attackDirection.x, attackDirection.y));
+        
+        // Phát animation attack (dùng đúng tên state trong Animator Controller)
+        currentAction = "Basic_Attack";
+        UpdateAnimation();
+        
+        // Reset về idle sau animation (sẽ được Update loop xử lý)
+        StartCoroutine(ResetAttackAnimation());
+        
+        Debug.Log($"[ZoeController] Attack direction: {currentDirection}");
+    }
+    
+    private System.Collections.IEnumerator ResetAttackAnimation()
+    {
+        // Chờ 1 frame đầu để Animator chuyển hẳn sang trạng thái Basic_Attack
+        yield return null;
+        
+        float duration = 0.75f; // Mặc định thời gian của 9 frame ở 12 FPS là 0.75s
+        if (animator != null)
+        {
+            AnimatorStateInfo stateInfo = animator.GetCurrentAnimatorStateInfo(0);
+            if (stateInfo.IsName($"Basic_Attack_{currentDirection}"))
+            {
+                duration = stateInfo.length;
+                Debug.Log($"[ZoeController] Detected attack animation length: {duration}s");
+            }
+        }
+        
+        // Trừ đi khoảng thời gian 1 frame đã chờ
+        yield return new WaitForSeconds(Mathf.Max(0.1f, duration - Time.deltaTime));
+        currentAction = "Breathing_Idle";
     }
 
     private void TryChopTree()

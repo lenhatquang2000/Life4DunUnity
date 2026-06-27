@@ -287,6 +287,39 @@ namespace AILife.UI
                         if (GUILayout.Button($"{p.username} (Level: {(p.attributes != null ? p.attributes.level : 1)}, Gold: {p.gold})", GUILayout.Height(30)))
                         {
                             statusMessage = $"Đã chọn nhân vật: {p.username}";
+                            
+                            Debug.Log("========================================");
+                            Debug.Log("[AuthUI_IMGUI] ===== PLAYER CLICKED =====");
+                            Debug.Log("========================================");
+                            Debug.Log($"[AuthUI_IMGUI] Player ID: {p.id}");
+                            Debug.Log($"[AuthUI_IMGUI] Username: {p.username}");
+                            Debug.Log($"[AuthUI_IMGUI] User ID: {p.userId}");
+                            Debug.Log($"[AuthUI_IMGUI] Experience: {p.experience}");
+                            Debug.Log($"[AuthUI_IMGUI] Gold: {p.gold}");
+                            Debug.Log($"[AuthUI_IMGUI] Gems: {p.gems}");
+                            Debug.Log($"[AuthUI_IMGUI] Avatar URL: {p.avatarUrl}");
+                            Debug.Log($"[AuthUI_IMGUI] Model Name: {p.model}");
+                            Debug.Log($"[AuthUI_IMGUI] Created At: {p.createdAt}");
+                            Debug.Log($"[AuthUI_IMGUI] Last Login At: {p.lastLoginAt}");
+                            
+                            if (p.attributes != null)
+                            {
+                                Debug.Log("========================================");
+                                Debug.Log("[AuthUI_IMGUI] ===== PLAYER ATTRIBUTES =====");
+                                Debug.Log("========================================");
+                                Debug.Log($"[AuthUI_IMGUI] Level: {p.attributes.level}");
+                                Debug.Log($"[AuthUI_IMGUI] Attack: {p.attributes.attack}");
+                                Debug.Log($"[AuthUI_IMGUI] Defense: {p.attributes.defense}");
+                                Debug.Log($"[AuthUI_IMGUI] Speed: {p.attributes.speed}");
+                                Debug.Log($"[AuthUI_IMGUI] Health: {p.attributes.health}");
+                                Debug.Log($"[AuthUI_IMGUI] Max Health: {p.attributes.maxHealth}");
+                            }
+                            else
+                            {
+                                Debug.LogWarning("[AuthUI_IMGUI] Player attributes is NULL!");
+                            }
+                            Debug.Log("========================================");
+                            
                             PlayerManager.Instance.SelectPlayer(p);
                         }
                     }
